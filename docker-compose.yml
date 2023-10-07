@@ -1,0 +1,8 @@
+version: '3'
+services:
+  my_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /path/to/thermal_zone0:/thermal_zone0
