@@ -20,7 +20,7 @@ network_command =  ''' echo $(ifconfig eth0) ; echo   $(ifconfig wlan0) ; echo $
 bot_token = os.environ.get("ENV_TLG_API_RASP_MON")
 print(f"token={bot_token}")
 
-# telegram_notify = telegram.Bot(bot_token)
+telegram_notify = telegram.Bot(bot_token)
 
 CHAT_ID = 0
 CHAT_ID_PATH =  os.path.expanduser("/var/rasp-monitor/telegram_chat_id")
@@ -93,7 +93,8 @@ def main():
         logging.info(f'Env is {bot_token}')
     else:
         logging.info(f'Env is not set!')
-    time.sleep(3600*6)
+    
+    # time.sleep(3600*6)
 
     wait_for_internet()
 
@@ -115,13 +116,9 @@ if __name__ == '__main__':
 # docker run -it --rm --name=rasp-monitor  -v /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor	truongkutetk97/rasp-monitor:0.1  
 
 '''
-docker run -it --rm -e ENV_TLG_API_RASP_MON="6084770511:AAEyGM-bxRcsgaWpguwswEsxzvGrbL0DBwM" --name=rasp-monitor  --user root \
-  -v /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor \
-  truongkutetk97/rasp-monitor:0.1
-
 docker-compose up -d
 docker exec -it rasp-monitor bash
-
+docker build -t truongkutetk97/rasp-monitor:0.1 .
 
 '''
 
@@ -131,19 +128,13 @@ docker exec -it rasp-monitor bash
 DockerFile
 # FROM python:3
 FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-jammy
-
-
 USER root
-
 RUN apt update 
 RUN  apt install -y  python3 pip python-is-python3  
-
 RUN pip install python-telegram-bot==13.13 
 RUN pip install requests
-
 RUN apt install -y net-tools wireless-tools  iputils-ping bc 
 ADD monitor.py /
-
 ENTRYPOINT ["python", "/monitor.py"]
 # CMD ["bash"]
 '''
@@ -156,9 +147,11 @@ services:
     image: truongkutetk97/rasp-monitor:0.1
     container_name: rasp-monitor-2
     user: root
+    network_mode: host
     privileged: true  # Add this line to enable the --privileged flag
     environment:
-      ENV_TLG_API_RASP_MON: "6084770511:AAEyGM-bxRcsgaWpguwswEsxzvGrbL0DBwM"
+      ENV_TLG_API_RASP_MON: ""
     volumes:
       - /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor
+    restart: unless-stopped
 '''

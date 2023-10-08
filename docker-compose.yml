@@ -2,9 +2,12 @@ version: '3'
 services:
   rasp-monitor:
     image: truongkutetk97/rasp-monitor:0.1
-    container_name: rasp-monitor
+    container_name: rasp-monitor-2
     user: root
+    network_mode: host
+    privileged: true  # Add this line to enable the --privileged flag
     environment:
-      ENV_TLG_API_RASP_MON: "6084770511:AAEyGM-bxRcsgaWpguwswEsxzvGrbL0DBwM"
+      ENV_TLG_API_RASP_MON: ""
     volumes:
       - /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor
+    restart: unless-stopped
