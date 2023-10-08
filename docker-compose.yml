@@ -1,8 +1,10 @@
 version: '3'
 services:
-  my_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  rasp-monitor:
+    image: truongkutetk97/rasp-monitor:0.1
+    container_name: rasp-monitor
+    user: root
+    environment:
+      ENV_TLG_API_RASP_MON: "6084770511:AAEyGM-bxRcsgaWpguwswEsxzvGrbL0DBwM"
     volumes:
-      - /path/to/thermal_zone0:/thermal_zone0
+      - /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor
