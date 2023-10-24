@@ -15,8 +15,8 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag rasp-mon
     - name: Packaging the docker image
-      run: docker save -o ~/target.tar rasp-mon
-    - run: ls -ahl ~/target.tar
+      run: docker save -o target.tar rasp-mon
+    - run: ls -ahl target.tar
     - name: Store artifact for distribution
       uses: actions/upload-artifact@v3
       with:
