@@ -2,7 +2,9 @@
 FROM ubuntu:23.04
 USER root
 RUN apt update
-RUN  apt install -y  python3 pip python-is-python3  
+RUN apt install -y  python3.12
+RUN apt install -y pip
+RUN apt install -y python-is-python3
 
 RUN pip install python-telegram-bot==13.13 
 RUN pip install requests
