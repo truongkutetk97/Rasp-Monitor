@@ -1,5 +1,5 @@
 # FROM python:3
-FROM ubuntu:23.04
+FROM ubuntu:22.04
 USER root
 RUN apt update
 
