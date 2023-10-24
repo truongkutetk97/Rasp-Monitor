@@ -11,9 +11,9 @@ RUN export TZ=Europe/London
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt install -y  python3.12
-RUN python --version
 RUN apt install -y pip
 RUN apt install -y python-is-python3
+RUN python --version
 
 RUN pip install python-telegram-bot==13.13 
 RUN pip install requests
