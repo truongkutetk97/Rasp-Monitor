@@ -5,6 +5,7 @@ RUN apt update
 
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-cache search python3.1
 RUN apt install -y  python3.13
 RUN apt install -y pip
 RUN apt install -y python-is-python3
