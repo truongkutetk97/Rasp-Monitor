@@ -1,6 +1,5 @@
 # FROM python:3
-FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-jammy
-
+FROM ubuntu:23.04
 RUN  apt install -y  python3 pip python-is-python3  
 
 RUN pip install python-telegram-bot==13.13 
