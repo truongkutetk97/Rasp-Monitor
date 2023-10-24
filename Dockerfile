@@ -1,9 +1,19 @@
 # FROM python:3
-FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-jammy
+FROM ubuntu:22.04
 USER root
+RUN apt update
 
-RUN apt update 
-RUN  apt install -y  python3 pip python-is-python3  
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt update
+RUN apt-cache search python3.1
+RUN export TZ=Europe/London
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt install -y  python3.12
+RUN apt install -y pip
+RUN apt install -y python-is-python3
+RUN python --version
 
 RUN pip install python-telegram-bot==13.13 
 RUN pip install requests

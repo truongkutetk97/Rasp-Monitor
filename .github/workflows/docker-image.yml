@@ -1,0 +1,24 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "Start integrate docker images"
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag rasp-mon
+    - name: Packaging the docker image
+      run: docker save -o target.tar rasp-mon
+    - run: ls -ahl target.tar
+    - name: Store artifact for distribution
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-build
+        path: target.tar
