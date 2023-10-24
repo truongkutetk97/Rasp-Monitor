@@ -1,6 +1,5 @@
 # FROM python:3
 FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-jammy
-USER root
 
 RUN apt update 
 RUN  apt install -y  python3 pip python-is-python3  
