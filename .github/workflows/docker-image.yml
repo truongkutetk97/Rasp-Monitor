@@ -16,4 +16,4 @@ jobs:
       run: docker build . --file Dockerfile --tag rasp-mon
     - name: Packaging the docker image
       run: docker save -o ~/target.tar rasp-mon
-    - run: ls -al /target.tar
+    - run: ls -al ~/target.tar
