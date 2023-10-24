@@ -15,7 +15,7 @@ jobs:
     - run: export docker_image_tag=$(date +%s)
     - run: echo $docker_image_tag
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag rasp-mon:$docker_image_name
+      run: docker build . --file Dockerfile --tag rasp-mon:$docker_image_tag
     - name: Packaging the docker image
-      run: docker save -o /target.tar rasp-mon:$docker_image_name
+      run: docker save -o /target.tar rasp-mon:$docker_image_tag
     - run: ls -al /target.tar
