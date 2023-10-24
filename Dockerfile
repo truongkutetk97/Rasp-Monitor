@@ -2,6 +2,8 @@
 FROM ubuntu:23.04
 USER root
 RUN apt update
+
+RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt install -y  python3.12
 RUN apt install -y pip
 RUN apt install -y python-is-python3
