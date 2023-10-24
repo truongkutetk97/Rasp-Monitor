@@ -12,10 +12,8 @@ jobs:
     steps:
     - run: echo "Start integrate docker images"
     - uses: actions/checkout@v3
-    - run: export docker_image_tag=$(date +%s)
-    - run: echo $docker_image_tag
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag rasp-mon:$docker_image_tag
+      run: docker build . --file Dockerfile --tag rasp-mon
     - name: Packaging the docker image
-      run: docker save -o /target.tar rasp-mon:$docker_image_tag
+      run: docker save -o /target.tar rasp-mon
     - run: ls -al /target.tar
