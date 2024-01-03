@@ -19,6 +19,10 @@ RUN pip install python-telegram-bot==13.13
 RUN pip install requests
 
 RUN apt install -y net-tools wireless-tools  iputils-ping bc 
+
+RUN pip install wakeonlan
+RUN pip install scapy
+
 ADD monitor.py /
 
 ENTRYPOINT ["python", "/monitor.py"]
