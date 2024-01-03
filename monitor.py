@@ -12,13 +12,20 @@ from threading import Thread, Lock
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext, Filters
 from telegram import Update, ForceReply
 from datetime import datetime
-
+from wakeonlan import send_magic_packet
+from scapy.all import ARP, Ether, srp
+import concurrent.futures
+import threading
 
 stat_command = '''echo $(uname -a | awk '{print $1, $2, $3, $13}' | tr ' ' '_') $(date "+%Y-%m-%d %H:%M:%S") CPU: $(top -b -n 1 | awk '/Cpu\(s\)/ {print 100 - $8"%"}') Temp:$(echo "scale=2; $(cat /sys/class/thermal/thermal_zone0/temp) / 1000" | bc) Up: $(uptime | awk '{print $3}' | sed 's/,//g')'''
 network_command =  ''' echo $(ifconfig eth0) ; echo   $(ifconfig wlan0) ; echo $(iwconfig wlan0) '''
 
-bot_token = os.environ.get("ENV_TLG_API_RASP_MON")
+# bot_token = os.environ.get("ENV_TLG_API_RASP_MON")
+bot_token="6084770511:AAEyGM-bxRcsgawM"
 print(f"token={bot_token}")
+
+pc_mac_address='A8-A16B-6E'
+print(f"pc_mac_address={pc_mac_address}")
 
 telegram_notify = telegram.Bot(bot_token)
 
@@ -28,6 +35,7 @@ CHAT_ID_PATH =  os.path.expanduser("/var/rasp-monitor/telegram_chat_id")
 async def monitorPiTemp():
     global loop, CHAT_ID
     while True: 
+        logging.debug(f'Thread checking')
         if CHAT_ID == 0:
             continue
         result = None
@@ -50,9 +58,104 @@ async def monitorPiTemp():
         logging.info(f"send stat result = {send_result}")
 
         time.sleep(3600*6)
+        time.sleep(3)
+
+def getPiTemp():
+    global loop, CHAT_ID
+    if CHAT_ID == 0:
+        return
+    result = None
+    network_result = None
+    try:
+        result = subprocess.check_output(stat_command, shell=True, text=True)
+        logging.info(f"result={result}")
+    except subprocess.CalledProcessError as e:
+        logging.info(f"Error: {e}")
+    logging.info(f"Chat ID: {CHAT_ID}")
+
+    send_result = telegram_notify.send_message(chat_id=CHAT_ID, text=result)
+    logging.info(f"send stat result = {send_result}")
+    try:
+        network_result = subprocess.check_output(network_command, shell=True, text=True)
+        logging.info(f"result={network_result}")
+    except subprocess.CalledProcessError as e:
+        logging.info(f"Error: {e}")
+    send_result = telegram_notify.send_message(chat_id=CHAT_ID, text=network_result)
+    logging.info(f"send stat result = {send_result}")
+
+def sendMagicPacket():
+    send_magic_packet(pc_mac_address)
+
+def ping_ip(ip):
+    # Run ping command once for each IP address
+    logging.info(f"pinging = {ip}")
+
+    command = f"ping -c 1 {ip}"
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def ping_all():
+    # Define the IP range
+    base_ip = "192.168.0."
+    ip_list = [base_ip + str(i) for i in range(256)]
+
+    # Create threads and start them to execute ping commands concurrently
+    threads = []
+    for ip in ip_list:
+        thread = threading.Thread(target=ping_ip, args=(ip,))
+        thread.start()
+        threads.append(thread)
+
+    # Wait for all threads to complete (ping commands to be sent)
+    for thread in threads:
+        thread.join()
+
+        
+def scan_ips(ip_range):
+    live_devices = []
+    for i in range(1, 255):
+        ip = ip_range + '.' + str(i)
+        logging.info(f"trying to fetch ip = {ip}")
+        # ARP request to get MAC address
+        arp_cmd = ['arp', '-n', ip]
+        arp_process = subprocess.Popen(arp_cmd, stdout=subprocess.PIPE)
+        arp_output, _ = arp_process.communicate()
+
+        # Check if the device is alive based on ping response
+        mac = "Unknown"
+        arp_lines = arp_output.splitlines()
+
+        if len(arp_lines) >= 2:
+            mac_parts = arp_lines[1].split()
+            if len(mac_parts) >= 5:
+                mac = mac_parts[2].decode()
+                live_devices.append({'ip': ip, 'mac': mac})
+                logging.info(f"rsesult of ip = {ip}, result = {mac_parts}")
+    return live_devices
+
+def advanced_scan():
+    global loop, CHAT_ID
+    ip_range = "192.168.0"  # Change to your desired IP range
+    ping_all()
+    devices = scan_ips(ip_range)
+    print("Discovered devices:")
+    for device in devices:
+        print(f"IP: {device['ip']} - MAC: {device['mac']}")
+    device_info = ', '.join([f"IP: {device['ip']} - MAC: {device['mac']}" for device in devices])
+    print(device_info)
+    send_result = telegram_notify.send_message(chat_id=CHAT_ID, text=device_info)
 
 def monitorPiTempThread(loop):
     loop.run_until_complete(monitorPiTemp())
+
+def handle_message(update, context):
+    if update.message.text == "activate":
+        get_chat_id(update, context)
+    elif update.message.text == "status":
+        getPiTemp()
+    elif update.message.text == "turnon":
+        sendMagicPacket()
+    elif update.message.text == "scan":
+        advanced_scan()
 
 def get_chat_id(update, context):
     global CHAT_ID
@@ -100,11 +203,13 @@ def main():
 
     updater = Updater(bot_token)
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, get_chat_id))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
     updater.start_polling()
 
     loop = asyncio.get_event_loop()
+    
+    logging.info(f'Starting thread')
 
     thread1 = Thread(target = monitorPiTempThread,args=(loop,))
     thread1.start()
@@ -119,6 +224,8 @@ if __name__ == '__main__':
 docker-compose up -d
 docker exec -it rasp-monitor bash
 docker build -t truongkutetk97/rasp-monitor:0.1 .
+docker build -t rasp-monitor .
+docker run -it --rm --name=rasp-monitor --privileged --network=host -v /home/pi/Rasp-Monitor/docker-folder/:/var/rasp-monitor	rasp-monitor
 
 '''
 
